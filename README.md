@@ -21,7 +21,7 @@ Die Integration benutzt dieselben Seiten wie die Weboberfläche des C.M.I. („S
 | angezeigte Messwerte (z. B. `RL Zirk. Ist: 20.7 °C`) | `sensor` (standardmäßig deaktiviert) |
 | Statusbilder (Pumpe, Ventil, WP *Heizen*, *STOPP* …) und `ON`/`OFF`-Texte | `binary_sensor` (standardmäßig deaktiviert) |
 
-Jede Schemaseite wird ein eigenes Gerät (Name = oberste Textzeile der Seite, z. B. „WZ-Küche“). Die Namen der Werte kommen aus dem Text, der im Schema in derselben Zeile links daneben steht (bei Statusbildern rechts daneben). Schaltzeiten bekommen zusätzlich die Überschrift darüber und „von“/„bis“, z. B. „Zeitprogramm 1 Zeitfenster 1 von“; Wochentage z. B. „Zeitprogramm 1 Mo“. Stehen Schaltzeiten ohne Zeilennummer untereinander, werden sie durchnummeriert („Zeitfenster 2 von“), die Wochentage heißen dann „Wochentag Mo“.
+Jede Schemaseite wird ein eigenes Gerät (Name = oberste Textzeile der Seite, z. B. „WZ-Küche“). Die Namen der Werte kommen aus dem Text, der im Schema in derselben Zeile links daneben steht (bei Statusbildern rechts daneben). Schaltzeiten bekommen zusätzlich die Überschrift darüber und „Beginn“/„Ende“, z. B. „Zeitprogramm 1 Zeitfenster 1 Beginn“; stehen sie ohne Zeilennummer untereinander, werden sie durchnummeriert („Zeitfenster 2 Beginn“). Wochentage heißen „Wochentag 1 Mo“ … „Wochentag 7 So“ (bzw. „Zeitprogramm 1 Wochentag 1 Mo“), damit Home Assistant sie von Montag bis Sonntag sortiert.
 
 Nach einem Update liest die Integration das Schema automatisch neu ein, wenn sich die Erkennung geändert hat. Die angezeigten Namen werden dabei aktualisiert, die Entitäts-IDs bleiben (neu erstellen: *Einstellungen → Entitäten → auswählen → Entitäts-IDs neu erstellen*).
 

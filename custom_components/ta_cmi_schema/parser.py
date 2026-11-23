@@ -223,7 +223,13 @@ _WIDTH = re.compile(r"#values\s*\{[^}]*?width\s*:\s*(\d+)")
 _HEIGHT = re.compile(r"#values\s*\{[^}]*?height\s*:\s*(\d+)")
 _ROW_NUMBER = re.compile(r"^\d{1,2}\.?$")
 ROW_NUMBER = _ROW_NUMBER
-WEEKDAYS = {"Mo", "Di", "Mi", "Do", "Fr", "Sa", "So", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"}
+# weekday button text -> position in the week (names are sorted alphabetically in HA)
+WEEKDAYS = {
+    day: i % 7 + 1
+    for i, day in enumerate(
+        ("Mo", "Di", "Mi", "Do", "Fr", "Sa", "So", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+    )
+}
 _RULE = re.compile(r"((?:#pos\d+[^{,]*,?\s*)+)\{([^}]*)\}")
 _PROP = re.compile(r"([a-z-]+)\s*:\s*([^;]+)")
 
@@ -469,7 +475,8 @@ def time_name(
     )
     suffix = None
     if len(siblings) == 2:
-        suffix = "von" if siblings[0][1] == pos else "bis"
+        # "Beginn"/"Ende" (not "von"/"bis") so both sort in the right order
+        suffix = "Beginn" if siblings[0][1] == pos else "Ende"
     elif len(siblings) > 2:
         suffix = str([p for _, p in siblings].index(pos) + 1)
     if label and _ROW_NUMBER.match(label):

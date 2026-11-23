@@ -69,10 +69,10 @@ class NamingTest(unittest.TestCase):
             lp = label_pos[pos]
             return p.time_name(pos, values, layout, times, label_pos, values[lp].text if lp else None)
 
-        self.assertEqual(name("pos32"), "Zeitprogramm 1 Zeitfenster 1 von")
-        self.assertEqual(name("pos33"), "Zeitprogramm 1 Zeitfenster 1 bis")
-        self.assertEqual(name("pos38"), "Zeitprogramm 2 Zeitfenster 1 von")
-        self.assertEqual(name("pos39"), "Zeitprogramm 2 Zeitfenster 1 bis")
+        self.assertEqual(name("pos32"), "Zeitprogramm 1 Zeitfenster 1 Beginn")
+        self.assertEqual(name("pos33"), "Zeitprogramm 1 Zeitfenster 1 Ende")
+        self.assertEqual(name("pos38"), "Zeitprogramm 2 Zeitfenster 1 Beginn")
+        self.assertEqual(name("pos39"), "Zeitprogramm 2 Zeitfenster 1 Ende")
         # weekday buttons: row label is the program number
         self.assertEqual(p.find_label("pos19", values, layout), "1")
 
@@ -100,10 +100,14 @@ class UnlabeledTimeRowsTest(unittest.TestCase):
         return p.time_name(pos, self.values, self.layout, self.times, self.label_pos, None)
 
     def test_rows_are_numbered(self):
-        self.assertEqual(self.name("pos10"), "Zeitfenster 1 von")
-        self.assertEqual(self.name("pos11"), "Zeitfenster 1 bis")
-        self.assertEqual(self.name("pos12"), "Zeitfenster 2 von")
-        self.assertEqual(self.name("pos15"), "Zeitfenster 3 bis")
+        self.assertEqual(self.name("pos10"), "Zeitfenster 1 Beginn")
+        self.assertEqual(self.name("pos11"), "Zeitfenster 1 Ende")
+        self.assertEqual(self.name("pos12"), "Zeitfenster 2 Beginn")
+        self.assertEqual(self.name("pos15"), "Zeitfenster 3 Ende")
+
+    def test_weekday_order(self):
+        days = ["So", "Mo", "Fr", "Di"]
+        self.assertEqual(sorted(days, key=p.WEEKDAYS.get), ["Mo", "Di", "Fr", "So"])
 
 
 class StartPageTest(unittest.TestCase):

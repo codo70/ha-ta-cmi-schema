@@ -202,15 +202,20 @@ class CMISchemaCoordinator(DataUpdateCoordinator[dict[int, dict[str, SchemaEleme
                 elif el.is_button:
                     row = values[label_pos[pos]].text if label_pos[pos] else None
                     text = el.button_text or f"Taste {pos[3:]}"
+
+                    def weekday(day: str) -> str:
+                        # "Wochentag 1 Mo" … "Wochentag 7 So": sorted Monday first
+                        return f"Wochentag {WEEKDAYS[day]} {day}" if day in WEEKDAYS else day
+
                     if row and ROW_NUMBER.match(row) and time_positions:
                         # weekday rows "1"/"2" next to the switching times of
                         # "Zeitprogramm 1"/"Zeitprogramm 2"
-                        name = f"Zeitprogramm {row.rstrip('.')} {text}"
+                        name = f"Zeitprogramm {row.rstrip('.')} {weekday(text)}"
                     elif row and ROW_NUMBER.match(row):
                         name = f"{text} {row.rstrip('.')}"
                     elif not row and time_positions and text in WEEKDAYS:
                         # weekday buttons of a time program without row label
-                        name = f"Wochentag {text}"
+                        name = weekday(text)
                     else:
                         name = f"{row} {text}" if row else text
                     params.append(
