@@ -34,9 +34,11 @@ from .parser import (
     find_headline,
     find_label,
     find_label_pos,
+    find_lamp_label,
     time_name,
     parse_layout,
     parse_number,
+    parse_on_off,
     parse_values,
 )
 
@@ -44,6 +46,7 @@ _LOGGER = logging.getLogger(__name__)
 
 KIND_SWITCH = "switch"
 KIND_SENSOR = "sensor"
+KIND_BINARY_SENSOR = "binary_sensor"
 
 
 def parse_pages_option(value: str | None) -> list[int] | None:
@@ -166,7 +169,9 @@ class CMISchemaCoordinator(DataUpdateCoordinator[dict[int, dict[str, SchemaEleme
                     inline_label, _ = el.split_label()
                     row = values[label_pos[pos]].text if label_pos[pos] else None
                     label = inline_label or row
-                    if changer.kind == KIND_TIME:
+                    if changer.kind == KIND_TIME and not label and el.text.endswith("Uhr"):
+                        name = "Uhrzeit"  # clock of the controller ("19:21 Uhr")
+                    elif changer.kind == KIND_TIME:
                         name = time_name(
                             pos, values, layout, time_positions, label_pos, label
                         )
@@ -208,8 +213,37 @@ class CMISchemaCoordinator(DataUpdateCoordinator[dict[int, dict[str, SchemaEleme
                             "name": unique(name),
                         }
                     )
+                elif with_sensors and el.is_lamp:
+                    label = find_lamp_label(pos, values, layout) or f"Status {pos[3:]}"
+                    params.append(
+                        {
+                            "key": f"{page}_{pos}",
+                            "kind": KIND_BINARY_SENSOR,
+                            "page": page,
+                            "pos": pos,
+                            "address": None,
+                            "name": unique(label),
+                        }
+                    )
                 elif with_sensors and not el.is_change and not el.is_link:
                     inline_label, value_text = el.split_label()
+                    if parse_on_off(value_text) is not None:
+                        label = (
+                            inline_label
+                            or find_label(pos, values, layout)
+                            or f"Status {pos[3:]}"
+                        )
+                        params.append(
+                            {
+                                "key": f"{page}_{pos}",
+                                "kind": KIND_BINARY_SENSOR,
+                                "page": page,
+                                "pos": pos,
+                                "address": None,
+                                "name": unique(label.rstrip(": ").strip()),
+                            }
+                        )
+                        continue
                     number = parse_number(value_text)
                     if number is None or number.unit is None:
                         continue

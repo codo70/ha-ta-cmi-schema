@@ -62,6 +62,16 @@ class SchemaElement:
         return CLASS_LINK in self.classes
 
     @property
+    def is_lamp(self) -> bool:
+        """Status picture (pump, valve, "Heizen", ...) switched by ``visibleN``."""
+        return (
+            not self.address
+            and not self.is_link
+            and not self.chunks
+            and self.visible_state is not None
+        )
+
+    @property
     def visible_state(self) -> int | None:
         """Value of the ``visibleN`` class (buttons: 1 = on, 0 = off, <0 = hidden/locked)."""
         for cls in self.classes:
@@ -245,6 +255,37 @@ def find_label_pos(
     return best[1] if best else None
 
 
+def find_lamp_label(
+    pos: str, elements: dict[str, SchemaElement], layout: PageLayout
+) -> str | None:
+    """Text next to a status picture; TA writes it right of the picture.
+
+    A reading such as "Wohnen: 20.7 °C" next to it lends its label ("Wohnen").
+    """
+    own = layout.positions.get(pos)
+    if own is None:
+        return None
+    best: tuple[float, str] | None = None
+    for other_pos, other in elements.items():
+        if other_pos == pos or other.is_change or other.is_button or other.is_link:
+            continue
+        info = layout.positions.get(other_pos)
+        if info is None or abs(info.top - own.top) > max(12.0, info.font_size * 0.6):
+            continue
+        inline, _ = other.split_label()
+        text = inline or (other.text if _is_label_text(other.text) else None)
+        if not text:
+            continue
+        distance = info.x - own.x
+        if distance <= 0:
+            distance = -distance + 100  # left of the picture: only if nothing right
+        if distance > 160:
+            continue
+        if best is None or distance < best[0]:
+            best = (distance, text)
+    return best[1] if best else None
+
+
 def find_label(
     pos: str, elements: dict[str, SchemaElement], layout: PageLayout
 ) -> str | None:
@@ -368,11 +409,26 @@ def parse_number(text: str) -> NumberValue | None:
     unit = match.group(2).strip() or None
     if unit and _NUMBER_VALUE.match(unit):
         return None
+    if unit and not re.search(r"[^\W\d_]|[°%]", unit):
+        return None  # "1." is a row number, not a reading with unit "."
     return NumberValue(float(match.group(1).replace(",", ".")), unit)
 
 
+def parse_on_off(text: str) -> bool | None:
+    """``"ON"`` / ``"OFF"`` (pump outputs shown as text)."""
+    value = text.strip(" :").upper()  # "Zirkpu.: : OFF" leaves ": OFF"
+    if value in ("ON", "EIN"):
+        return True
+    if value in ("OFF", "AUS"):
+        return False
+    return None
+
+
 def parse_time_minutes(text: str) -> int | None:
-    match = _TIME_VALUE.match(text.strip())
+    text = text.strip()
+    if text.endswith("Uhr"):
+        text = text[:-3].strip()  # "19:21 Uhr"
+    match = _TIME_VALUE.match(text)
     if not match:
         return None
     return int(match.group(1)) * 60 + int(match.group(2))

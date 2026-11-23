@@ -77,6 +77,78 @@ class NamingTest(unittest.TestCase):
         self.assertEqual(p.find_label("pos19", values, layout), "1")
 
 
+class StartPageTest(unittest.TestCase):
+    """Overview page with status pictures, controller clock and power in "KW"."""
+
+    def setUp(self):
+        self.values = p.parse_values(fixture("1.cgi"))
+        self.layout = p.parse_layout(fixture("1.html"))
+
+    def lamp(self, pos):
+        return p.find_lamp_label(pos, self.values, self.layout)
+
+    def test_status_pictures(self):
+        lamps = {pos for pos, el in self.values.items() if el.is_lamp}
+        self.assertEqual(
+            lamps,
+            {"pos16", "pos17", "pos38", "pos43", "pos46", "pos47", "pos52", "pos54"},
+        )
+        self.assertEqual(self.values["pos46"].visible_state, 1)
+        self.assertEqual(self.values["pos47"].visible_state, 0)
+        # label written right of the picture
+        self.assertEqual(self.lamp("pos46"), "Heizen")
+        self.assertEqual(self.lamp("pos47"), "Warmwasser")
+        self.assertEqual(self.lamp("pos52"), "STOPP")
+        self.assertEqual(self.lamp("pos54"), "PV-Betrieb")
+        self.assertEqual(self.lamp("pos16"), "Keller-Lager")
+        self.assertEqual(self.lamp("pos17"), "Büro")
+        # label of a reading next to the picture
+        self.assertEqual(self.lamp("pos43"), "Wohnen")
+        self.assertEqual(self.lamp("pos38"), "Gäste SZ")
+
+    def test_links_and_values_are_not_lamps(self):
+        self.assertFalse(self.values["pos76"].is_lamp)
+        self.assertFalse(self.values["pos67"].is_lamp)
+        self.assertFalse(self.values["pos0"].is_lamp)
+
+    def test_controller_clock(self):
+        self.assertEqual(p.parse_time_minutes(self.values["pos67"].text), 19 * 60 + 21)
+        self.assertIsNone(p.find_label("pos67", self.values, self.layout))
+
+    def test_power_in_kw(self):
+        self.assertEqual(p.parse_number(self.values["pos7"].text).unit, "KW")
+
+
+class HeatPumpPageTest(unittest.TestCase):
+    """Page 2: large fonts, heat pump status pictures, pumps as ON/OFF text."""
+
+    def setUp(self):
+        self.values = p.parse_values(fixture("2.cgi"))
+        self.layout = p.parse_layout(fixture("2.html"))
+
+    def test_heat_pump_status(self):
+        lamp = lambda pos: p.find_lamp_label(pos, self.values, self.layout)  # noqa: E731
+        self.assertEqual(lamp("pos41"), "Heizen")
+        self.assertEqual(lamp("pos43"), "Warmwasser")
+        self.assertEqual(lamp("pos45"), "PV-Überschuss")
+        self.assertEqual(lamp("pos28"), "Wohnen")
+        self.assertEqual(self.values["pos41"].visible_state, 1)
+
+    def test_pump_text(self):
+        for pos, label, state in (
+            ("pos5", "Pumpe", False),
+            ("pos15", "Zirkpu.", False),
+            ("pos27", "Pu. Ofen", True),
+        ):
+            inline, value = self.values[pos].split_label()
+            self.assertEqual(inline, label)
+            self.assertIs(p.parse_on_off(value), state)
+
+    def test_power_without_space(self):
+        number = p.parse_number(self.values["pos36"].text)
+        self.assertEqual((number.value, number.unit), (0.0, "KW"))
+
+
 class LabelFilterTest(unittest.TestCase):
     def test_readings_are_not_labels(self):
         self.assertFalse(p._is_label_text("Außen: 5.8 °C"))
@@ -85,6 +157,12 @@ class LabelFilterTest(unittest.TestCase):
         self.assertFalse(p._is_label_text("-"))
         self.assertTrue(p._is_label_text("T.Raum Normal"))
         self.assertTrue(p._is_label_text("1.", allow_row_number=True))
+
+    def test_row_numbers_are_not_readings(self):
+        self.assertIsNone(p.parse_number("1."))
+        self.assertIsNone(p.parse_number("3."))
+        self.assertEqual(p.parse_number("0 %").unit, "%")
+        self.assertEqual(p.parse_number("2.5 kW").unit, "kW")
 
 
 class ChangerTest(unittest.TestCase):

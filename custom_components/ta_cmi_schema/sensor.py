@@ -39,6 +39,8 @@ class CMISchemaSensor(CMISchemaEntity, SensorEntity):
     def __init__(self, coordinator, param) -> None:
         super().__init__(coordinator, param)
         unit = param.get("unit")
+        if unit == "KW":
+            unit = "kW"  # TA writes power as "KW"
         if unit in _UNITS:
             self._attr_device_class, self._attr_native_unit_of_measurement = _UNITS[unit]
         else:

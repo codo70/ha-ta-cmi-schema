@@ -19,8 +19,11 @@ Die Integration benutzt dieselben Seiten wie die Weboberfläche des C.M.I. („S
 | Uhrzeit (z. B. Zeitprogramm `06:00`) | `time` |
 | Ein/Aus-Taste (z. B. Wochentage *Mo … So*) | `switch` |
 | angezeigte Messwerte (z. B. `RL Zirk. Ist: 20.7 °C`) | `sensor` (standardmäßig deaktiviert) |
+| Statusbilder (Pumpe, Ventil, WP *Heizen*, *STOPP* …) und `ON`/`OFF`-Texte | `binary_sensor` (standardmäßig deaktiviert) |
 
-Jede Schemaseite wird ein eigenes Gerät (Name = oberste Textzeile der Seite, z. B. „WZ-Küche“). Die Namen der Werte kommen aus dem Text, der im Schema in derselben Zeile links daneben steht. Schaltzeiten bekommen zusätzlich die Überschrift darüber und „von“/„bis“, z. B. „Zeitprogramm 1 1. von“.
+Jede Schemaseite wird ein eigenes Gerät (Name = oberste Textzeile der Seite, z. B. „WZ-Küche“). Die Namen der Werte kommen aus dem Text, der im Schema in derselben Zeile links daneben steht (bei Statusbildern rechts daneben). Schaltzeiten bekommen zusätzlich die Überschrift darüber und „von“/„bis“, z. B. „Zeitprogramm 1 Zeitfenster 1 von“; Wochentage z. B. „Zeitprogramm 1 Mo“.
+
+Nach einem Update liest die Integration das Schema automatisch neu ein, wenn sich die Erkennung geändert hat. Die angezeigten Namen werden dabei aktualisiert, die Entitäts-IDs bleiben (neu erstellen: *Einstellungen → Entitäten → auswählen → Entitäts-IDs neu erstellen*).
 
 ## Installation
 
