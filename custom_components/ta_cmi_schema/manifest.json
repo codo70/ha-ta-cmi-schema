@@ -1,6 +1,6 @@
 {
   "domain": "ta_cmi_schema",
-  "name": "T.A. C.M.I. Schema",
+  "name": "Technische Alternative C.M.I. Schema",
   "codeowners": ["@codo70"],
   "config_flow": true,
   "documentation": "https://github.com/codo70/ha-ta-cmi-schema",
@@ -8,5 +8,5 @@
   "iot_class": "local_polling",
   "issue_tracker": "https://github.com/codo70/ha-ta-cmi-schema/issues",
   "requirements": [],
-  "version": "0.2.3"
+  "version": "0.2.4"
 }

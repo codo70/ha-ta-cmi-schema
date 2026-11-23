@@ -2,7 +2,7 @@
   "config": {
     "step": {
       "user": {
-        "title": "T.A. C.M.I.",
+        "title": "Technische Alternative C.M.I.",
         "description": "Adresse und Zugangsdaten des C.M.I. Alle Werte, die im C.M.I.-Schema änderbar sind, werden automatisch gefunden.",
         "data": {
           "host": "Host / IP",
@@ -11,7 +11,7 @@
         }
       },
       "reauth_confirm": {
-        "title": "T.A. C.M.I.",
+        "title": "Technische Alternative C.M.I.",
         "data": {
           "username": "Benutzername",
           "password": "Passwort"
@@ -30,7 +30,7 @@
   "options": {
     "step": {
       "init": {
-        "title": "T.A. C.M.I.",
+        "title": "Technische Alternative C.M.I.",
         "data": {
           "scan_interval": "Abfrageintervall (Sekunden)",
           "pages": "Nur diese Schemaseiten (z. B. 3, 7, 20-28; leer = alle)",

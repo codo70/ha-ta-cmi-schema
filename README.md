@@ -1,4 +1,4 @@
-# T.A. C.M.I. Schema – Home Assistant Integration
+# Technische Alternative C.M.I. Schema – Home Assistant Integration
 
 [![HACS Custom](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://hacs.xyz/docs/faq/custom_repositories)
 
@@ -24,16 +24,18 @@ Jede Schemaseite wird ein eigenes Gerät (Name = oberste Textzeile der Seite, z.
 
 ## Installation
 
-### HACS
-1. HACS → ⋮ → *Benutzerdefinierte Repositories* → `https://github.com/codo70/ha-ta-cmi-schema`, Typ *Integration*
-2. „T.A. C.M.I. Schema“ installieren, Home Assistant neu starten
+### Marketplace (HACS)
+Ab Home Assistant 2026.11 heißt HACS *Marketplace*.
+
+1. Marketplace (bzw. HACS) → ⋮ → *Benutzerdefinierte Repositories* → `https://github.com/codo70/ha-ta-cmi-schema`, Typ *Integration*
+2. „Technische Alternative C.M.I. Schema“ installieren, Home Assistant neu starten
 
 ### Manuell
 Ordner `custom_components/ta_cmi_schema` nach `<config>/custom_components/` kopieren und neu starten.
 
 ## Einrichtung
 
-*Einstellungen → Geräte & Dienste → Integration hinzufügen → T.A. C.M.I. Schema*
+*Einstellungen → Geräte & Dienste → Integration hinzufügen → Technische Alternative C.M.I. Schema*
 
 - **Host:** IP oder Name des C.M.I., z. B. `192.168.1.50`
 - **Benutzername / Passwort:** Login des C.M.I.
@@ -84,7 +86,7 @@ Reads and writes **every value that can be changed in the C.M.I. schema** (Techn
 
 The integration uses the same requests as the C.M.I. schema web page. Each schema page becomes a device; changeable numbers become `number`, selections `select`, clock times `time`, on/off buttons `switch`, displayed readings optional (disabled) `sensor` entities. Labels are taken from the text left of the value on the same row.
 
-**Install:** add `https://github.com/codo70/ha-ta-cmi-schema` as a custom HACS repository (type *Integration*), or copy `custom_components/ta_cmi_schema` manually. Then add the integration with host, user and password of the C.M.I.
+**Install:** add `https://github.com/codo70/ha-ta-cmi-schema` as a custom repository in the Marketplace (HACS) (type *Integration*), or copy `custom_components/ta_cmi_schema` manually. Then add the integration with host, user and password of the C.M.I.
 
 **Options:** polling interval, page selection (`3, 7, 20-28`), sensors on/off. After changing the schema in TA Designer press **"Re-read schema"**.
 

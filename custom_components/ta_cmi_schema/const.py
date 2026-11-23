@@ -1,4 +1,4 @@
-"""Constants for the T.A. C.M.I. Schema integration."""
+"""Constants for the Technische Alternative C.M.I. Schema integration."""
 
 DOMAIN = "ta_cmi_schema"
 

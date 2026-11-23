@@ -1,4 +1,4 @@
-"""Config flow for T.A. C.M.I. Schema."""
+"""Config flow for Technische Alternative C.M.I. Schema."""
 
 from __future__ import annotations
 
