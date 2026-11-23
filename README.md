@@ -8,6 +8,8 @@ Liest und schreibt **alle Werte, die im Schema des C.M.I. (Technische Alternativ
 
 Die Integration benutzt dieselben Seiten wie die Weboberfläche des C.M.I. („Startseite Regelung“ / `schema.html`). Was dort klickbar ist, wird in Home Assistant zur Entität.
 
+![Schema-Startseite im Dashboard „T.A. Schema“](docs/images/schema-startseite.png)
+
 > Für Messwerte, Ein- und Ausgänge gibt es die Integration [ta_cmi](https://github.com/DeerMaximum/ta_cmi) (JSON-API, nur lesen). Diese Integration ergänzt sie um das **Schreiben**.
 
 ## Was wird angelegt?
@@ -71,6 +73,12 @@ Die Schemaseiten erscheinen in Home Assistant so wie im C.M.I. – mit Hintergru
   type: custom:ta-cmi-schema-card
   page: 5
   ```
+
+![Weitere Schemaseite mit Live-Werten](docs/images/schema-seite.png)
+
+Jede Schemaseite wird ein eigenes Gerät:
+
+![Geräte der Integration](docs/images/integration-geraete.png)
 
 Antippen funktioniert wie im C.M.I.: Werte öffnen den Home-Assistant-Dialog zum Ändern, Ein/Aus-Tasten schalten direkt, Navigationsflächen wechseln die Seite. Bilder und Werte holt die Integration selbst – der C.M.I.-Login bleibt im Server, die Ansicht funktioniert daher auch unterwegs in der App.
 
