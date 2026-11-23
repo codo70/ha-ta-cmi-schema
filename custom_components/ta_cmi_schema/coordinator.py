@@ -81,6 +81,7 @@ class CMISchemaCoordinator(DataUpdateCoordinator[dict[int, dict[str, SchemaEleme
             hass, STORAGE_VERSION, f"{DOMAIN}.{entry.entry_id}"
         )
         self.discovery: dict[str, Any] = {"pages": {}, "params": []}
+        self.hub_device_id: str | None = None
 
     # ------------------------------------------------------------------ discovery
 

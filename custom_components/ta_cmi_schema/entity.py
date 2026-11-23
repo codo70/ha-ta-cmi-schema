@@ -13,6 +13,8 @@ from .const import DOMAIN
 from .coordinator import CMISchemaCoordinator
 from .parser import SchemaElement
 
+_VIA_DEVICE_ID = "via_device_id" in DeviceInfo.__annotations__
+
 
 class CMISchemaEntity(CoordinatorEntity[CMISchemaCoordinator]):
     """One value of a C.M.I. schema page."""
@@ -27,14 +29,19 @@ class CMISchemaEntity(CoordinatorEntity[CMISchemaCoordinator]):
         page_info = coordinator.discovery["pages"].get(page, {})
         self._attr_unique_id = f"{entry.entry_id}_{param['key']}"
         self._attr_name = param["name"]
-        self._attr_device_info = DeviceInfo(
+        device_info = DeviceInfo(
             identifiers={(DOMAIN, f"{entry.entry_id}_page_{page}")},
             name=page_info.get("device") or f"Seite {page}",
             manufacturer="Technische Alternative",
             model="C.M.I. Schema",
             configuration_url=f"{coordinator.client.base_url}/schema.html#{page}",
-            via_device=(DOMAIN, entry.entry_id),
         )
+        # newer Home Assistant versions want the device id, older ones the identifier
+        if _VIA_DEVICE_ID and coordinator.hub_device_id:
+            device_info["via_device_id"] = coordinator.hub_device_id
+        else:
+            device_info["via_device"] = (DOMAIN, entry.entry_id)
+        self._attr_device_info = device_info
 
     @property
     def element(self) -> SchemaElement | None:
