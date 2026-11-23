@@ -36,7 +36,7 @@ Ordner `custom_components/ta_cmi_schema` nach `<config>/custom_components/` kopi
 *Einstellungen → Geräte & Dienste → Integration hinzufügen → TA C.M.I. Schema*
 
 - **Host:** IP oder Name des C.M.I., z. B. `192.168.1.50`
-- **Benutzername / Passwort:** Login des C.M.I. (Standard `admin` / `admin` – bitte ändern)
+- **Benutzername / Passwort:** Login des C.M.I.
 
 Beim ersten Start werden alle Schemaseiten (1, 2, 3, … bis drei Seiten in Folge fehlen) eingelesen. Das dauert je nach Schema 10–60 Sekunden und wird danach zwischengespeichert.
 
