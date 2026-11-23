@@ -34,9 +34,10 @@
         "data": {
           "scan_interval": "Polling interval (seconds)",
           "pages": "Only these schema pages (e.g. 3, 7, 20-28; empty = all)",
-          "create_sensors": "Create sensors for displayed readings (disabled by default)"
+          "create_sensors": "Create sensors for displayed readings (disabled by default)",
+          "show_panel": "Show dashboard \"T.A. Schema\" in the sidebar"
         },
-        "description": "The schema is crawled again after saving."
+        "description": "The schema is crawled again after changing the page selection or the sensor option."
       }
     },
     "error": {

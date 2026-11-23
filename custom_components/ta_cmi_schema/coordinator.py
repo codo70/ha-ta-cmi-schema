@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from datetime import timedelta
 import logging
+import time
 from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
@@ -81,11 +82,16 @@ class CMISchemaCoordinator(DataUpdateCoordinator[dict[int, dict[str, SchemaEleme
             update_interval=timedelta(seconds=interval),
         )
         self.client = client
+        self.setup_options = dict(entry.options)
         self._store: Store[dict[str, Any]] = Store(
             hass, STORAGE_VERSION, f"{DOMAIN}.{entry.entry_id}"
         )
         self.discovery: dict[str, Any] = {"pages": {}, "params": []}
         self.hub_device_id: str | None = None
+        # for the schema view (dashboard / card)
+        self._layouts: dict[int, PageLayout] = {}
+        self._live: dict[int, tuple[float, dict[str, SchemaElement]]] = {}
+        self._files: dict[str, tuple[bytes, str]] = {}
 
     # ------------------------------------------------------------------ discovery
 
@@ -296,6 +302,56 @@ class CMISchemaCoordinator(DataUpdateCoordinator[dict[int, dict[str, SchemaEleme
         data = dict(self.data or {})
         data[page] = values
         self.async_set_updated_data(data)
+
+    # ------------------------------------------------------------------ schema view
+
+    async def async_page_layout(self, page: int) -> PageLayout:
+        """Layout (positions, CSS, background) of a page; cached until reload."""
+        if page not in self._layouts:
+            self._layouts[page] = parse_layout(await self.client.get_layout(page))
+        return self._layouts[page]
+
+    async def async_page_values(
+        self, page: int, max_age: float = 5.0
+    ) -> dict[str, SchemaElement]:
+        """Current values of any page for the schema view.
+
+        Uses its own short cache instead of the coordinator data, so an open
+        dashboard never delays the regular polling of the entities.
+        """
+        cached = self._live.get(page)
+        if cached and time.monotonic() - cached[0] <= max_age:
+            return cached[1]
+        try:
+            values = parse_values(await self.client.get_values(page))
+        except CMIAuthError as err:
+            raise ConfigEntryAuthFailed from err
+        self._live[page] = (time.monotonic(), values)
+        return values
+
+    async def async_file(self, name: str) -> tuple[bytes, str]:
+        """A picture of the schema; pictures never change, so they are kept."""
+        if name not in self._files:
+            if len(self._files) >= 300:
+                self._files.clear()
+            self._files[name] = await self.client.get_file(name)
+        return self._files[name]
+
+    async def async_press(self, page: int, pos: str, value: int | None) -> None:
+        """Click on a schema button like the C.M.I. page does."""
+        values = await self.async_page_values(page, max_age=0)
+        el = values.get(pos)
+        if el is None or not el.address or not (el.is_button or el.is_taster):
+            raise CMIError(f"No button at {pos} on page {page}")
+        if el.visible_state is not None and el.visible_state < -1:
+            raise CMIError("Button is locked")
+        if value is None:
+            # same rule as the C.M.I. page: changefrom 0 -> 1, otherwise 0
+            value = 1 if (el.changefrom or "0").strip() == "0" else 0
+        await self.client.change(el.address, value)
+        self._live.pop(page, None)
+        if page in self.polled_pages and el.is_button:
+            await self.async_refresh_page(page)
 
     def element(self, param: dict[str, Any]) -> SchemaElement | None:
         page = (self.data or {}).get(param["page"])

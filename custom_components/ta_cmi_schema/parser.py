@@ -29,6 +29,8 @@ _WS = re.compile(r"\s+")
 _NUMBER_VALUE = re.compile(r"^(-?\d+(?:[.,]\d+)?)\s*(.*)$")
 _TIME_VALUE = re.compile(r"^(\d{1,2}):(\d{2})$")
 _INLINE_LABEL = re.compile(r"^(.*?\S)\s*:\s+(\S.*)$")
+_LINK_TARGET = re.compile(r"schema\.html#(\d+)")
+_FILE_NAME = re.compile(r"^[\w.-]+\.(?:png|gif|jpe?g|bmp|svg)$", re.IGNORECASE)
 
 
 def _clean(text: str) -> str:
@@ -43,7 +45,12 @@ class SchemaElement:
     classes: list[str] = field(default_factory=list)
     address: str | None = None
     changefrom: str | None = None
+    onclick: str | None = None
     chunks: list[str] = field(default_factory=list)
+    # status pictures: {"name": "1_pos16_0.png", "bis": 0 | None, "hide": bool}
+    images: list[dict] = field(default_factory=list)
+    # button faces: [("v0", "Mo"), ("v1", "Mo")]
+    spans: list[list[str]] = field(default_factory=list)
 
     @property
     def text(self) -> str:
@@ -56,6 +63,11 @@ class SchemaElement:
     @property
     def is_button(self) -> bool:
         return CLASS_BUTTON in self.classes and bool(self.address)
+
+    @property
+    def is_taster(self) -> bool:
+        """Push button: 1 while pressed, 0 when released."""
+        return CLASS_TASTER in self.classes and bool(self.address)
 
     @property
     def is_link(self) -> bool:
@@ -83,6 +95,13 @@ class SchemaElement:
         return None
 
     @property
+    def link_page(self) -> int | None:
+        """Target page of a transparent navigation area (``schema.html#2``)."""
+        if self.onclick and (match := _LINK_TARGET.search(self.onclick)):
+            return int(match.group(1))
+        return None
+
+    @property
     def button_text(self) -> str:
         return _clean(self.chunks[0]) if self.chunks else ""
 
@@ -101,12 +120,13 @@ class _ValuesParser(HTMLParser):
         self.elements: list[SchemaElement] = []
         self._current: SchemaElement | None = None
         self._depth = 0
+        self._spans: list[str | None] = []  # open <span> classes (v0/v1 or None)
 
     def handle_starttag(self, tag, attrs):
         if tag != "div" and self._current is None:
             return
+        attr = dict(attrs)
         if self._current is None:
-            attr = dict(attrs)
             pos = attr.get("id") or ""
             if not pos.startswith("pos"):
                 return
@@ -115,13 +135,36 @@ class _ValuesParser(HTMLParser):
                 classes=(attr.get("class") or "").split(),
                 address=(attr.get("adresse") or "").strip() or None,
                 changefrom=(attr.get("changefrom") or "").strip() or None,
+                onclick=attr.get("onclick"),
             )
             self._depth = 1
+            self._spans = []
         elif tag == "div":
             self._depth += 1
+        elif tag == "img":
+            name = file_name(attr.get("src"))
+            if name:
+                try:
+                    bis = int(attr["bis"]) if attr.get("bis") is not None else None
+                except ValueError:
+                    bis = None
+                self._current.images.append(
+                    {"name": name, "bis": bis, "hide": "hide" in (attr.get("class") or "").split()}
+                )
+        elif tag == "span":
+            cls = next(
+                (c for c in (attr.get("class") or "").split() if c in ("v0", "v1")), None
+            )
+            self._spans.append(cls)
+            if cls:
+                self._current.spans.append([cls, ""])
 
     def handle_endtag(self, tag):
-        if self._current is not None and tag == "div":
+        if self._current is None:
+            return
+        if tag == "span" and self._spans:
+            self._spans.pop()
+        elif tag == "div":
             self._depth -= 1
             if self._depth == 0:
                 self.elements.append(self._current)
@@ -130,6 +173,9 @@ class _ValuesParser(HTMLParser):
     def handle_data(self, data):
         if self._current is not None and data.strip():
             self._current.chunks.append(data)
+            if any(self._spans) and self._current.spans:
+                face = self._current.spans[-1]
+                face[1] = _clean(f"{face[1]} {data}")
 
 
 def parse_values(html: str) -> dict[str, SchemaElement]:
@@ -159,9 +205,20 @@ class PageLayout:
     width: float = 0
     height: float = 0
     positions: dict[str, PositionInfo] = field(default_factory=dict)
+    image: str | None = None  # background picture in schematic_files/
+    background: str | None = None  # page background colour
+    refresh: int | None = None  # seconds, like the C.M.I. page
+    css: str = ""  # sanitized page stylesheet (#values / #posNN rules only)
 
 
 _TITLE = re.compile(r"""titel\s*=\s*["']([^"']*)["']""")
+_IMAGE = re.compile(r"""\bimage\s*=\s*["']([^"']*)["']""")
+_REFRESH = re.compile(r"\brefreshtime\s*=\s*(\d+)")
+_STYLE = re.compile(r"<style[^>]*>(.*?)</style>", re.IGNORECASE | re.DOTALL)
+_CSS_RULE = re.compile(r"([^{}]+)\{([^{}]*)\}")
+_CSS_SELECTOR = re.compile(r"^#(?:pos\d+|values)(?:[.#]?[\w-]+|[\s>]+[.#]?[\w-]+)*$")
+_BODY_BG = re.compile(r"body\s*\{[^}]*?background(?:-color)?\s*:\s*([#\w(),. ]+)")
+_UNSAFE_CSS = re.compile(r"url\s*\(|expression|@|\\|behavior|binding|javascript", re.IGNORECASE)
 _WIDTH = re.compile(r"#values\s*\{[^}]*?width\s*:\s*(\d+)")
 _HEIGHT = re.compile(r"#values\s*\{[^}]*?height\s*:\s*(\d+)")
 _ROW_NUMBER = re.compile(r"^\d{1,2}\.?$")
@@ -175,6 +232,13 @@ def parse_layout(html: str) -> PageLayout:
     layout = PageLayout()
     if match := _TITLE.search(html):
         layout.title = _clean(match.group(1)) or None
+    if match := _IMAGE.search(html):
+        layout.image = file_name(match.group(1))
+    if match := _REFRESH.search(html):
+        layout.refresh = int(match.group(1))
+    if match := _BODY_BG.search(html):
+        layout.background = match.group(1).strip()
+    layout.css = sanitize_css(" ".join(_STYLE.findall(html)))
     if match := _WIDTH.search(html):
         layout.width = float(match.group(1))
     if match := _HEIGHT.search(html):
@@ -203,6 +267,42 @@ def parse_layout(html: str) -> PageLayout:
             height=_px(prop.get("height", "0")),
         )
     return layout
+
+
+def file_name(src: str | None) -> str | None:
+    """``schematic_files/1_pos16_0.png`` -> ``1_pos16_0.png`` (pictures of the C.M.I. only)."""
+    if not src:
+        return None
+    src = src.strip()
+    if src.startswith("schematic_files/"):
+        src = src[len("schematic_files/") :]
+    return src if _FILE_NAME.match(src) else None
+
+
+def sanitize_css(css: str) -> str:
+    """Keep only the ``#values`` / ``#posNN`` rules of a schema page.
+
+    The page CSS is shown inside Home Assistant, so nothing that could load
+    external resources or escape the schema view is passed on.
+    """
+    css = re.sub(r"/\*.*?\*/", "", css, flags=re.DOTALL)
+    rules = []
+    for selectors, body in _CSS_RULE.findall(css):
+        kept = [
+            s.strip()
+            for s in selectors.split(",")
+            if _CSS_SELECTOR.match(_WS.sub(" ", s.strip()))
+        ]
+        if not kept:
+            continue
+        decls = [
+            d.strip()
+            for d in body.split(";")
+            if ":" in d and not _UNSAFE_CSS.search(d)
+        ]
+        if decls:
+            rules.append(f"{', '.join(kept)} {{{'; '.join(decls)}}}")
+    return "\n".join(rules)
 
 
 def _px(value: str) -> float:

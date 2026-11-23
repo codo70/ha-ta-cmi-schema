@@ -14,6 +14,7 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from .api import CMIAuthError, CMIClient, CMIError
 from .const import (
     CONF_PAGES,
+    CONF_PANEL,
     CONF_SCAN_INTERVAL,
     CONF_SENSORS,
     DEFAULT_SCAN_INTERVAL,
@@ -120,6 +121,9 @@ class CMISchemaOptionsFlow(OptionsFlow):
                     ): str,
                     vol.Required(
                         CONF_SENSORS, default=options.get(CONF_SENSORS, True)
+                    ): bool,
+                    vol.Required(
+                        CONF_PANEL, default=options.get(CONF_PANEL, True)
                     ): bool,
                 }
             ),

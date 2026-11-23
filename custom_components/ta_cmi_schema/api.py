@@ -52,6 +52,18 @@ class CMIClient:
         params: dict[str, str] | None = None,
         headers: dict[str, str] | None = None,
     ) -> str:
+        raw, _ = await self._request(path, params, headers)
+        try:
+            return raw.decode("utf-8")
+        except UnicodeDecodeError:
+            return raw.decode("latin-1")
+
+    async def _request(
+        self,
+        path: str,
+        params: dict[str, str] | None = None,
+        headers: dict[str, str] | None = None,
+    ) -> tuple[bytes, str]:
         url = f"{self._base}/{path}"
         async with self._lock:
             last_err: Exception | None = None
@@ -71,6 +83,7 @@ class CMIClient:
                         if resp.status >= 400:
                             raise CMIError(f"HTTP {resp.status} for {path}")
                         raw = await resp.read()
+                        content_type = resp.content_type
                 except (CMIAuthError, CMINotFound):
                     raise
                 except (aiohttp.ClientError, asyncio.TimeoutError, CMIError) as err:
@@ -78,10 +91,7 @@ class CMIClient:
                     _LOGGER.debug("Request %s failed (attempt %s): %s", path, attempt + 1, err)
                     await asyncio.sleep(1)
                     continue
-                try:
-                    return raw.decode("utf-8")
-                except UnicodeDecodeError:
-                    return raw.decode("latin-1")
+                return raw, content_type
             raise CMIError(f"Cannot reach C.M.I. ({path}): {last_err}") from last_err
 
     async def get_values(self, page: int) -> str:
@@ -91,6 +101,10 @@ class CMIClient:
     async def get_layout(self, page: int) -> str:
         """Title and layout of a schema page (``schematic_files/<page>.html``)."""
         return await self._get(f"schematic_files/{page}.html")
+
+    async def get_file(self, name: str) -> tuple[bytes, str]:
+        """A picture of the schema (``schematic_files/<name>``) and its content type."""
+        return await self._request(f"schematic_files/{name}")
 
     async def get_changer(self, short_address: str) -> Changer:
         """Edit dialog of a value: write address, range, options."""

@@ -34,9 +34,10 @@
         "data": {
           "scan_interval": "Abfrageintervall (Sekunden)",
           "pages": "Nur diese Schemaseiten (z. B. 3, 7, 20-28; leer = alle)",
-          "create_sensors": "Angezeigte Messwerte als Sensoren anlegen (deaktiviert)"
+          "create_sensors": "Angezeigte Messwerte als Sensoren anlegen (deaktiviert)",
+          "show_panel": "Dashboard „T.A. Schema“ in der Seitenleiste anzeigen"
         },
-        "description": "Nach dem Speichern wird das Schema neu eingelesen."
+        "description": "Nach Änderung der Seitenauswahl oder der Sensor-Option wird das Schema neu eingelesen."
       }
     },
     "error": {

@@ -19,12 +19,17 @@ from .const import (
     ATTR_ENTRY_ID,
     ATTR_SHORT_ADDRESS,
     ATTR_VALUE,
+    CONF_PAGES,
+    CONF_PANEL,
+    CONF_SENSORS,
     DOMAIN,
     PLATFORMS,
     SERVICE_REDISCOVER,
     SERVICE_WRITE_VALUE,
 )
 from .coordinator import CMISchemaCoordinator
+from .frontend import async_register_panel, async_remove_panel, async_setup_frontend
+from .websocket import async_register_websocket
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -66,6 +71,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
     hass.services.async_register(DOMAIN, SERVICE_WRITE_VALUE, write_value, schema=WRITE_SCHEMA)
     hass.services.async_register(DOMAIN, SERVICE_REDISCOVER, rediscover, schema=REDISCOVER_SCHEMA)
+    async_register_websocket(hass)
     return True
 
 
@@ -110,6 +116,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    try:
+        await async_setup_frontend(hass)
+        if _panel_wanted(hass):
+            await async_register_panel(hass)
+    except Exception:  # noqa: BLE001 - the entities must work even without the view
+        _LOGGER.exception("Could not set up the schema view")
     # reading all pages takes a few seconds - do it in the background so the
     # Home Assistant start is not delayed (entities are unavailable until then)
     entry.async_create_background_task(
@@ -125,12 +137,27 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 async def _async_options_updated(hass: HomeAssistant, entry: ConfigEntry) -> None:
     coordinator: CMISchemaCoordinator = hass.data[DOMAIN][entry.entry_id]
-    # page selection / sensor option changed -> crawl again
-    await coordinator.async_load_discovery(force=True)
+    if any(
+        entry.options.get(key) != coordinator.setup_options.get(key)
+        for key in (CONF_PAGES, CONF_SENSORS)
+    ):
+        # page selection / sensor option changed -> crawl again
+        await coordinator.async_load_discovery(force=True)
     await hass.config_entries.async_reload(entry.entry_id)
+
+
+def _panel_wanted(hass: HomeAssistant, without: str | None = None) -> bool:
+    """Sidebar dashboard shown while at least one C.M.I. wants it."""
+    return any(
+        coordinator.config_entry.options.get(CONF_PANEL, True)
+        for entry_id, coordinator in hass.data.get(DOMAIN, {}).items()
+        if entry_id != without
+    )
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if unload_ok := await hass.config_entries.async_unload_platforms(entry, PLATFORMS):
         hass.data[DOMAIN].pop(entry.entry_id, None)
+        if not _panel_wanted(hass, without=entry.entry_id):
+            async_remove_panel(hass)
     return unload_ok

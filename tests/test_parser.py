@@ -186,5 +186,42 @@ class ChangerTest(unittest.TestCase):
         self.assertEqual(c.write_address, "0100174848C13C")
 
 
+class SchemaViewTest(unittest.TestCase):
+    def test_pictures_links_and_page_css(self):
+        values = p.parse_values(fixture("1.cgi"))
+        self.assertEqual(
+            values["pos16"].images,
+            [
+                {"name": "1_pos16_0.png", "bis": 0, "hide": True},
+                {"name": "1_pos16_1.png", "bis": None, "hide": False},
+            ],
+        )
+        self.assertEqual(values["pos76"].link_page, 3)
+        layout = p.parse_layout(fixture("1.html"))
+        self.assertEqual(layout.image, "1.png")
+        self.assertEqual(layout.refresh, 60)
+        self.assertIn("#pos16 img {height:20px; width:20px}", layout.css)
+
+    def test_button_faces(self):
+        values = p.parse_values(fixture("5.cgi"))
+        self.assertEqual(values["pos19"].spans, [["v0", "Mo"], ["v1", "Mo"]])
+        self.assertEqual(values["pos19"].button_text, "Mo")
+        css = p.parse_layout(fixture("5.html")).css
+        self.assertIn("#pos19.visible1 .v1 {", css)
+
+    def test_css_is_sanitized(self):
+        css = p.sanitize_css(
+            "body{margin:0} #pos1{background:url(http://evil)} #pos2{color:red; behavior:x}"
+            " .other{top:0} #pos3, .x{left:1px} /* #pos4{top:1px} */"
+        )
+        self.assertEqual(css, "#pos2 {color:red}\n#pos3 {left:1px}")
+
+    def test_file_names(self):
+        self.assertEqual(p.file_name("schematic_files/1_pos16_0.png"), "1_pos16_0.png")
+        self.assertIsNone(p.file_name("../secret.png"))
+        self.assertIsNone(p.file_name("http://x/y.png"))
+        self.assertIsNone(p.file_name("schematic_files/1.cgi"))
+
+
 if __name__ == "__main__":
     unittest.main()

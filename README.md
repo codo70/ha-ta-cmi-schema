@@ -49,9 +49,22 @@ Beim ersten Start werden alle Schemaseiten (1, 2, 3, … bis drei Seiten in Folg
 - **Abfrageintervall** (Standard 60 s)
 - **Nur diese Schemaseiten**, z. B. `3, 7, 20-28` (leer = alle)
 - **Messwerte als Sensoren anlegen** (an/aus)
+- **Dashboard „T.A. Schema“ in der Seitenleiste anzeigen** (an/aus)
 
 ### Schema geändert?
 Nach Änderungen im TA Designer den Button **„Schema neu einlesen“** am C.M.I.-Gerät drücken (oder Aktion `ta_cmi_schema.rediscover`).
+
+## Schema-Ansicht (Dashboard und Karte)
+Die Schemaseiten erscheinen in Home Assistant so wie im C.M.I. – mit Hintergrundbild, Live-Werten, Statusbildern und Tasten:
+
+- **Dashboard „T.A. Schema“** in der Seitenleiste: ein Reiter pro Schemaseite, wird automatisch angelegt.
+- **Karte** für eigene Dashboards: *Karte hinzufügen → „T.A. C.M.I. Schema“* und die Seite auswählen, oder in YAML:
+  ```yaml
+  type: custom:ta-cmi-schema-card
+  page: 5
+  ```
+
+Antippen funktioniert wie im C.M.I.: Werte öffnen den Home-Assistant-Dialog zum Ändern, Ein/Aus-Tasten schalten direkt, Navigationsflächen wechseln die Seite. Bilder und Werte holt die Integration selbst – der C.M.I.-Login bleibt im Server, die Ansicht funktioniert daher auch unterwegs in der App.
 
 ## Aktionen
 
@@ -92,6 +105,8 @@ The integration uses the same requests as the C.M.I. schema web page. Each schem
 **Install:** add `https://github.com/codo70/ha-ta-cmi-schema` as a custom repository in the Marketplace (HACS) (type *Integration*), or copy `custom_components/ta_cmi_schema` manually. Then add the integration with host, user and password of the C.M.I.
 
 **Options:** polling interval, page selection (`3, 7, 20-28`), sensors on/off. After changing the schema in TA Designer press **"Re-read schema"**.
+
+**Schema view:** the sidebar dashboard "T.A. Schema" shows every schema page like the C.M.I. does (background, live values, status pictures, buttons). For your own dashboards use the card `type: custom:ta-cmi-schema-card` with `page: <n>`.
 
 **Action:** `ta_cmi_schema.write_value` with `short_address` and `value`.
 
