@@ -508,8 +508,6 @@ def time_name(
         if len(rows) > 1:
             index = next(i for i, top in enumerate(rows) if abs(own.top - top) <= 20)
             label = f"Zeitfenster {index + 1}"
-            # keep the windows together with "Zeitprogramm Wochentag …"
-            section = section or "Zeitprogramm"
     return " ".join(part for part in (section, label, suffix) if part) or f"Schaltzeit {pos[3:]}"
 
 

@@ -21,9 +21,17 @@ Die Integration benutzt dieselben Seiten wie die Weboberfläche des C.M.I. („S
 | angezeigte Messwerte (z. B. `RL Zirk. Ist: 20.7 °C`) | `sensor` (standardmäßig deaktiviert) |
 | Statusbilder (Pumpe, Ventil, WP *Heizen*, *STOPP* …) und `ON`/`OFF`-Texte | `binary_sensor` (standardmäßig deaktiviert) |
 
-Jede Schemaseite wird ein eigenes Gerät (Name = oberste Textzeile der Seite, z. B. „WZ-Küche“). Die Namen der Werte kommen aus dem Text, der im Schema in derselben Zeile links daneben steht (bei Statusbildern rechts daneben). Schaltzeiten bekommen zusätzlich die Überschrift darüber und „Beginn“/„Ende“, z. B. „Zeitprogramm 1 Zeitfenster 1 Beginn“; stehen sie ohne Zeilennummer untereinander, werden sie durchnummeriert („Zeitprogramm Zeitfenster 2 Beginn“). Wochentage heißen „Wochentag 1 Montag“ … „Wochentag 7 Sonntag“ (z. B. „Zeitprogramm Wochentag 1 Montag“ oder „Zeitprogramm 1 Wochentag 1 Montag“). So stehen Wochentage und Zeitfenster eines Zeitprogramms in Home Assistant zusammen und in der richtigen Reihenfolge.
+Jede Schemaseite wird ein eigenes Gerät (Name = oberste Textzeile der Seite, z. B. „WZ-Küche“). Die Namen der Werte kommen aus dem Text, der im Schema in derselben Zeile links daneben steht (bei Statusbildern rechts daneben). Schaltzeiten bekommen zusätzlich die Überschrift darüber und „Beginn“/„Ende“, z. B. „Zeitprogramm 1 Zeitfenster 1 Beginn“; stehen sie ohne Zeilennummer untereinander, werden sie durchnummeriert („Zeitfenster 1 Beginn“, „Zeitfenster 2 Beginn“ …). Die Wochentag-Tasten heißen „Zeitprogramm Wochentag 1 Montag“ … „Wochentag 7 Sonntag“ (bei mehreren Zeitprogrammen „Zeitprogramm 1 Wochentag 1 Montag“), damit Home Assistant sie von Montag bis Sonntag sortiert.
 
 Nach einem Update liest die Integration das Schema automatisch neu ein, wenn sich die Erkennung geändert hat. Die angezeigten Namen werden dabei aktualisiert, die Entitäts-IDs bleiben (neu erstellen: *Einstellungen → Entitäten → auswählen → Entitäts-IDs neu erstellen*).
+
+### Zeitfenster und Zeitprogramme
+Die Zeitfenster eines Zeitprogramms gelten für **alle eingeschalteten Wochentage** – z. B. Zeitfenster 1 = 06:00–07:00 an jedem Tag, an dem der Wochentag-Schalter ein ist. Getrennte Zeiten pro Tag gibt es nur, wenn das Zeitprogramm in der UVR so programmiert ist.
+
+**Weitere Zeitfenster oder Zeitprogramme** lassen sich nicht in Home Assistant anlegen. Die Anzahl ist in der UVR-Programmierung festgelegt:
+1. In der UVR-Programmierung (**TAPPS2**) die Funktion *Zeitprogramm* erweitern (mehr Zeitfenster) oder ein weiteres Zeitprogramm anlegen und auf die UVR übertragen.
+2. Im **TA Designer** die neuen Werte auf die Schemaseite legen und das Schema auf das C.M.I. übertragen.
+3. In Home Assistant am C.M.I.-Gerät **„Schema neu einlesen“** drücken – die neuen Zeitfenster erscheinen automatisch.
 
 ## Installation
 

@@ -20,7 +20,7 @@ PANEL_ICON = "mdi:heat-pump-outline"
 STORAGE_VERSION = 1
 # bump whenever discovery (names, detected types) changes, so cached schemas
 # of older versions are re-read automatically after an update
-DISCOVERY_VERSION = 7
+DISCOVERY_VERSION = 8
 
 PLATFORMS = ["number", "select", "time", "switch", "sensor", "binary_sensor", "button"]
 
