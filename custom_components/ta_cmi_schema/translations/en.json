@@ -2,7 +2,7 @@
   "config": {
     "step": {
       "user": {
-        "title": "TA C.M.I.",
+        "title": "T.A. C.M.I.",
         "description": "Address and credentials of the C.M.I. Every value that can be changed in the C.M.I. schema is discovered automatically.",
         "data": {
           "host": "Host / IP",
@@ -11,7 +11,7 @@
         }
       },
       "reauth_confirm": {
-        "title": "TA C.M.I.",
+        "title": "T.A. C.M.I.",
         "data": {
           "username": "Username",
           "password": "Password"
@@ -30,7 +30,7 @@
   "options": {
     "step": {
       "init": {
-        "title": "TA C.M.I.",
+        "title": "T.A. C.M.I.",
         "data": {
           "scan_interval": "Polling interval (seconds)",
           "pages": "Only these schema pages (e.g. 3, 7, 20-28; empty = all)",

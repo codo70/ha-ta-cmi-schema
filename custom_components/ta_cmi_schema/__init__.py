@@ -1,4 +1,4 @@
-"""TA C.M.I. Schema - read and write every value of a C.M.I. schema page."""
+"""T.A. C.M.I. Schema - read and write every value of a C.M.I. schema page."""
 
 from __future__ import annotations
 

@@ -1,4 +1,4 @@
-"""Base entity for the TA C.M.I. Schema integration."""
+"""Base entity for the T.A. C.M.I. Schema integration."""
 
 from __future__ import annotations
 

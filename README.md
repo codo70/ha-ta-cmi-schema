@@ -1,4 +1,4 @@
-# TA C.M.I. Schema – Home Assistant Integration
+# T.A. C.M.I. Schema – Home Assistant Integration
 
 [![HACS Custom](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://hacs.xyz/docs/faq/custom_repositories)
 
@@ -26,14 +26,14 @@ Jede Schemaseite wird ein eigenes Gerät (Name = oberste Textzeile der Seite, z.
 
 ### HACS
 1. HACS → ⋮ → *Benutzerdefinierte Repositories* → `https://github.com/codo70/ha-ta-cmi-schema`, Typ *Integration*
-2. „TA C.M.I. Schema“ installieren, Home Assistant neu starten
+2. „T.A. C.M.I. Schema“ installieren, Home Assistant neu starten
 
 ### Manuell
 Ordner `custom_components/ta_cmi_schema` nach `<config>/custom_components/` kopieren und neu starten.
 
 ## Einrichtung
 
-*Einstellungen → Geräte & Dienste → Integration hinzufügen → TA C.M.I. Schema*
+*Einstellungen → Geräte & Dienste → Integration hinzufügen → T.A. C.M.I. Schema*
 
 - **Host:** IP oder Name des C.M.I., z. B. `192.168.1.50`
 - **Benutzername / Passwort:** Login des C.M.I.
