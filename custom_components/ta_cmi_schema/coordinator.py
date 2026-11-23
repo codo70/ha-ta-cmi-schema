@@ -190,7 +190,11 @@ class CMISchemaCoordinator(DataUpdateCoordinator[dict[int, dict[str, SchemaEleme
                 elif el.is_button:
                     row = values[label_pos[pos]].text if label_pos[pos] else None
                     text = el.button_text or f"Taste {pos[3:]}"
-                    if row and ROW_NUMBER.match(row):
+                    if row and ROW_NUMBER.match(row) and time_positions:
+                        # weekday rows "1"/"2" next to the switching times of
+                        # "Zeitprogramm 1"/"Zeitprogramm 2"
+                        name = f"Zeitprogramm {row.rstrip('.')} {text}"
+                    elif row and ROW_NUMBER.match(row):
                         name = f"{text} {row.rstrip('.')}"
                     else:
                         name = f"{row} {text}" if row else text

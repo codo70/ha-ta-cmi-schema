@@ -330,6 +330,9 @@ def time_name(
         suffix = "von" if siblings[0][1] == pos else "bis"
     elif len(siblings) > 2:
         suffix = str([p for _, p in siblings].index(pos) + 1)
+    if label and _ROW_NUMBER.match(label):
+        # rows "1.", "2.", "3." of a time program are its time windows
+        label = f"Zeitfenster {label.rstrip('.')}"
     return " ".join(part for part in (section, label, suffix) if part) or f"Schaltzeit {pos[3:]}"
 
 

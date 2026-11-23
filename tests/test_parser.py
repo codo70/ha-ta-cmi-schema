@@ -69,10 +69,10 @@ class NamingTest(unittest.TestCase):
             lp = label_pos[pos]
             return p.time_name(pos, values, layout, times, label_pos, values[lp].text if lp else None)
 
-        self.assertEqual(name("pos32"), "Zeitprogramm 1 1. von")
-        self.assertEqual(name("pos33"), "Zeitprogramm 1 1. bis")
-        self.assertEqual(name("pos38"), "Zeitprogramm 2 1. von")
-        self.assertEqual(name("pos39"), "Zeitprogramm 2 1. bis")
+        self.assertEqual(name("pos32"), "Zeitprogramm 1 Zeitfenster 1 von")
+        self.assertEqual(name("pos33"), "Zeitprogramm 1 Zeitfenster 1 bis")
+        self.assertEqual(name("pos38"), "Zeitprogramm 2 Zeitfenster 1 von")
+        self.assertEqual(name("pos39"), "Zeitprogramm 2 Zeitfenster 1 bis")
         # weekday buttons: row label is the program number
         self.assertEqual(p.find_label("pos19", values, layout), "1")
 

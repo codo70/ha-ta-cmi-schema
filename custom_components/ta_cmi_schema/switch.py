@@ -6,7 +6,6 @@ from typing import Any
 
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -27,7 +26,7 @@ async def async_setup_entry(
 
 
 class CMISchemaSwitch(CMISchemaEntity, SwitchEntity):
-    _attr_entity_category = EntityCategory.CONFIG
+    # no entity category: weekdays belong next to the switching times
 
     @property
     def available(self) -> bool:
