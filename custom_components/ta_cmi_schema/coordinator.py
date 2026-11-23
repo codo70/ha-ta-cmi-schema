@@ -165,7 +165,7 @@ class CMISchemaCoordinator(DataUpdateCoordinator[dict[int, dict[str, SchemaEleme
                             pos, values, layout, time_positions, label_pos, label
                         )
                     else:
-                        name = label or pos
+                        name = label or f"Wert {pos[3:]}"
                     params.append(
                         {
                             "key": el.address,
@@ -183,7 +183,7 @@ class CMISchemaCoordinator(DataUpdateCoordinator[dict[int, dict[str, SchemaEleme
                     )
                 elif el.is_button:
                     row = values[label_pos[pos]].text if label_pos[pos] else None
-                    text = el.button_text or pos
+                    text = el.button_text or f"Taste {pos[3:]}"
                     if row and ROW_NUMBER.match(row):
                         name = f"{text} {row.rstrip('.')}"
                     else:
@@ -203,7 +203,7 @@ class CMISchemaCoordinator(DataUpdateCoordinator[dict[int, dict[str, SchemaEleme
                     number = parse_number(value_text)
                     if number is None or number.unit is None:
                         continue
-                    label = inline_label or find_label(pos, values, layout) or pos
+                    label = inline_label or find_label(pos, values, layout) or f"Messwert {pos[3:]}"
                     params.append(
                         {
                             "key": f"{page}_{pos}",

@@ -207,7 +207,13 @@ def _is_label_text(text: str, allow_row_number: bool = False) -> bool:
         return True
     if _TIME_VALUE.match(text):
         return False
-    return not _NUMBER_VALUE.match(text)
+    if _NUMBER_VALUE.match(text):
+        return False
+    # "Außen: 5.8 °C" is a reading with its own label, not a label for something else
+    inline = _INLINE_LABEL.match(text)
+    if inline and (_NUMBER_VALUE.match(inline.group(2)) or _TIME_VALUE.match(inline.group(2))):
+        return False
+    return True
 
 
 def _same_row(a: PositionInfo, b: PositionInfo) -> bool:
@@ -324,7 +330,7 @@ def time_name(
         suffix = "von" if siblings[0][1] == pos else "bis"
     elif len(siblings) > 2:
         suffix = str([p for _, p in siblings].index(pos) + 1)
-    return " ".join(part for part in (section, label, suffix) if part) or pos
+    return " ".join(part for part in (section, label, suffix) if part) or f"Schaltzeit {pos[3:]}"
 
 
 def find_headline(elements: dict[str, SchemaElement], layout: PageLayout) -> str | None:

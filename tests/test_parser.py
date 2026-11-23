@@ -77,6 +77,16 @@ class NamingTest(unittest.TestCase):
         self.assertEqual(p.find_label("pos19", values, layout), "1")
 
 
+class LabelFilterTest(unittest.TestCase):
+    def test_readings_are_not_labels(self):
+        self.assertFalse(p._is_label_text("Außen: 5.8 °C"))
+        self.assertFalse(p._is_label_text("22.0 °C"))
+        self.assertFalse(p._is_label_text("06:00"))
+        self.assertFalse(p._is_label_text("-"))
+        self.assertTrue(p._is_label_text("T.Raum Normal"))
+        self.assertTrue(p._is_label_text("1.", allow_row_number=True))
+
+
 class ChangerTest(unittest.TestCase):
     def test_number(self):
         c = p.parse_changer(fixture("changer_number.html"))

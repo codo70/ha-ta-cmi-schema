@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import logging
+
 import voluptuous as vol
 
 from homeassistant.config_entries import ConfigEntry
@@ -23,6 +25,8 @@ from .const import (
     SERVICE_WRITE_VALUE,
 )
 from .coordinator import CMISchemaCoordinator
+
+_LOGGER = logging.getLogger(__name__)
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
@@ -59,8 +63,18 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
     async def rediscover(call: ServiceCall) -> None:
         coordinator = _coordinator(call)
-        await coordinator.async_load_discovery(force=True)
-        hass.config_entries.async_schedule_reload(coordinator.config_entry.entry_id)
+        entry = coordinator.config_entry
+
+        async def _run() -> None:
+            try:
+                await coordinator.async_load_discovery(force=True)
+            except CMIError as err:
+                _LOGGER.error("Re-reading the C.M.I. schema failed: %s", err)
+                return
+            hass.config_entries.async_schedule_reload(entry.entry_id)
+
+        # crawling all pages takes a while - do not block the caller
+        entry.async_create_background_task(hass, _run(), f"{DOMAIN}_rediscover")
 
     hass.services.async_register(DOMAIN, SERVICE_WRITE_VALUE, write_value, schema=WRITE_SCHEMA)
     hass.services.async_register(DOMAIN, SERVICE_REDISCOVER, rediscover, schema=REDISCOVER_SCHEMA)
@@ -79,7 +93,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         await coordinator.async_load_discovery()
     except CMIError as err:
         raise ConfigEntryNotReady(f"C.M.I. not reachable: {err}") from err
-    await coordinator.async_config_entry_first_refresh()
 
     hub = dr.async_get(hass).async_get_or_create(
         config_entry_id=entry.entry_id,
@@ -93,6 +106,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    # reading all pages takes a few seconds - do it in the background so the
+    # Home Assistant start is not delayed (entities are unavailable until then)
+    entry.async_create_background_task(
+        hass, coordinator.async_refresh(), f"{DOMAIN}_first_refresh"
+    )
     entry.async_on_unload(entry.add_update_listener(_async_options_updated))
     return True
 
