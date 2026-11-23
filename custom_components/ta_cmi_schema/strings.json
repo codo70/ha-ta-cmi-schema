@@ -1,0 +1,83 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "TA C.M.I.",
+        "description": "Address and credentials of the C.M.I. Every value that can be changed in the C.M.I. schema is discovered automatically.",
+        "data": {
+          "host": "Host / IP",
+          "username": "Username",
+          "password": "Password"
+        }
+      },
+      "reauth_confirm": {
+        "title": "TA C.M.I.",
+        "data": {
+          "username": "Username",
+          "password": "Password"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "C.M.I. not reachable or no schema page 1",
+      "invalid_auth": "Invalid username or password"
+    },
+    "abort": {
+      "already_configured": "This C.M.I. is already configured",
+      "reauth_successful": "Credentials updated"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "TA C.M.I.",
+        "data": {
+          "scan_interval": "Polling interval (seconds)",
+          "pages": "Only these schema pages (e.g. 3, 7, 20-28; empty = all)",
+          "create_sensors": "Create sensors for displayed readings (disabled by default)"
+        },
+        "description": "The schema is crawled again after saving."
+      }
+    },
+    "error": {
+      "invalid_pages": "Invalid page list"
+    }
+  },
+  "entity": {
+    "button": {
+      "rediscover": {
+        "name": "Re-read schema"
+      }
+    }
+  },
+  "services": {
+    "write_value": {
+      "name": "Write value",
+      "description": "Writes a value by its short address from the C.M.I. schema (adresse=\"…\").",
+      "fields": {
+        "config_entry_id": {
+          "name": "C.M.I.",
+          "description": "Only needed with several C.M.I."
+        },
+        "short_address": {
+          "name": "Short address",
+          "description": "11 character address from the schema"
+        },
+        "value": {
+          "name": "Value",
+          "description": "Number, option index (0, 1, …) or minutes for clock times"
+        }
+      }
+    },
+    "rediscover": {
+      "name": "Re-read schema",
+      "description": "Crawls all schema pages again (after changes in TA Designer).",
+      "fields": {
+        "config_entry_id": {
+          "name": "C.M.I.",
+          "description": "Only needed with several C.M.I."
+        }
+      }
+    }
+  }
+}

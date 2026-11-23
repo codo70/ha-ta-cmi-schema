@@ -1,0 +1,83 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "TA C.M.I.",
+        "description": "Adresse und Zugangsdaten des C.M.I. Alle Werte, die im C.M.I.-Schema änderbar sind, werden automatisch gefunden.",
+        "data": {
+          "host": "Host / IP",
+          "username": "Benutzername",
+          "password": "Passwort"
+        }
+      },
+      "reauth_confirm": {
+        "title": "TA C.M.I.",
+        "data": {
+          "username": "Benutzername",
+          "password": "Passwort"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "C.M.I. nicht erreichbar oder keine Schemaseite 1 vorhanden",
+      "invalid_auth": "Benutzername oder Passwort falsch"
+    },
+    "abort": {
+      "already_configured": "Dieses C.M.I. ist bereits eingerichtet",
+      "reauth_successful": "Zugangsdaten aktualisiert"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "TA C.M.I.",
+        "data": {
+          "scan_interval": "Abfrageintervall (Sekunden)",
+          "pages": "Nur diese Schemaseiten (z. B. 3, 7, 20-28; leer = alle)",
+          "create_sensors": "Angezeigte Messwerte als Sensoren anlegen (deaktiviert)"
+        },
+        "description": "Nach dem Speichern wird das Schema neu eingelesen."
+      }
+    },
+    "error": {
+      "invalid_pages": "Ungültige Seitenliste"
+    }
+  },
+  "entity": {
+    "button": {
+      "rediscover": {
+        "name": "Schema neu einlesen"
+      }
+    }
+  },
+  "services": {
+    "write_value": {
+      "name": "Wert schreiben",
+      "description": "Schreibt einen Wert über die Kurzadresse aus dem C.M.I.-Schema (adresse=\"…\").",
+      "fields": {
+        "config_entry_id": {
+          "name": "C.M.I.",
+          "description": "Nur nötig bei mehreren C.M.I."
+        },
+        "short_address": {
+          "name": "Kurzadresse",
+          "description": "11-stellige Adresse aus dem Schema"
+        },
+        "value": {
+          "name": "Wert",
+          "description": "Zahl, Index der Auswahl (0, 1, …) oder Minuten bei Uhrzeiten"
+        }
+      }
+    },
+    "rediscover": {
+      "name": "Schema neu einlesen",
+      "description": "Liest alle Schemaseiten neu ein (nach Änderungen im TA Designer).",
+      "fields": {
+        "config_entry_id": {
+          "name": "C.M.I.",
+          "description": "Nur nötig bei mehreren C.M.I."
+        }
+      }
+    }
+  }
+}
