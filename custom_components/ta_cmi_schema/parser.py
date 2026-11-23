@@ -136,17 +136,26 @@ class PositionInfo:
     x: float
     font_size: float = 0
     bold: bool = False
+    height: float = 0
+
+    @property
+    def center_y(self) -> float:
+        return self.top + (self.height or self.font_size * 1.2) / 2
 
 
 @dataclass
 class PageLayout:
     title: str | None = None
     width: float = 0
+    height: float = 0
     positions: dict[str, PositionInfo] = field(default_factory=dict)
 
 
 _TITLE = re.compile(r"""titel\s*=\s*["']([^"']*)["']""")
 _WIDTH = re.compile(r"#values\s*\{[^}]*?width\s*:\s*(\d+)")
+_HEIGHT = re.compile(r"#values\s*\{[^}]*?height\s*:\s*(\d+)")
+_ROW_NUMBER = re.compile(r"^\d{1,2}\.?$")
+ROW_NUMBER = _ROW_NUMBER
 _RULE = re.compile(r"((?:#pos\d+[^{,]*,?\s*)+)\{([^}]*)\}")
 _PROP = re.compile(r"([a-z-]+)\s*:\s*([^;]+)")
 
@@ -158,6 +167,8 @@ def parse_layout(html: str) -> PageLayout:
         layout.title = _clean(match.group(1)) or None
     if match := _WIDTH.search(html):
         layout.width = float(match.group(1))
+    if match := _HEIGHT.search(html):
+        layout.height = float(match.group(1))
     props: dict[str, dict[str, str]] = {}
     for selectors, body in _RULE.findall(html):
         for pos in re.findall(r"#(pos\d+)(?![\w ])", selectors):
@@ -179,6 +190,7 @@ def parse_layout(html: str) -> PageLayout:
             x=x,
             font_size=_px(prop.get("font-size", "0")),
             bold="bold" in prop.get("font-weight", ""),
+            height=_px(prop.get("height", "0")),
         )
     return layout
 
@@ -188,58 +200,147 @@ def _px(value: str) -> float:
     return float(match.group(1)) if match else 0.0
 
 
-def _is_label_text(text: str) -> bool:
+def _is_label_text(text: str, allow_row_number: bool = False) -> bool:
     if not text or text in {"-", "--", "?"}:
         return False
+    if allow_row_number and _ROW_NUMBER.match(text):
+        return True
     if _TIME_VALUE.match(text):
         return False
     return not _NUMBER_VALUE.match(text)
 
 
-def find_label(
+def _same_row(a: PositionInfo, b: PositionInfo) -> bool:
+    tolerance = max(15.0, a.font_size * 0.6, b.font_size * 0.6)
+    return abs(a.center_y - b.center_y) <= tolerance
+
+
+def find_label_pos(
     pos: str, elements: dict[str, SchemaElement], layout: PageLayout
 ) -> str | None:
-    """Find the descriptive text written on the same row, left of ``pos``."""
+    """Position of the descriptive text on the same row, left of ``pos``."""
     own = layout.positions.get(pos)
     if own is None:
         return None
-    tolerance = max(15.0, own.font_size * 0.6)
     best: tuple[float, str] | None = None
     for other_pos, other in elements.items():
         if other_pos == pos or other.is_change or other.is_button or other.is_link:
             continue
         info = layout.positions.get(other_pos)
-        if info is None or abs(info.top - own.top) > tolerance:
+        if info is None or not _same_row(own, info):
             continue
-        text = other.text
-        if not _is_label_text(text):
+        if not _is_label_text(other.text, allow_row_number=True):
             continue
         distance = own.x - info.x
         if distance <= 0:
             continue
         if best is None or distance < best[0]:
-            best = (distance, text)
+            best = (distance, other_pos)
     return best[1] if best else None
 
 
+def find_label(
+    pos: str, elements: dict[str, SchemaElement], layout: PageLayout
+) -> str | None:
+    """Descriptive text written on the same row, left of ``pos``."""
+    label_pos = find_label_pos(pos, elements, layout)
+    return elements[label_pos].text if label_pos else None
+
+
+def find_section(
+    pos: str, elements: dict[str, SchemaElement], layout: PageLayout
+) -> str | None:
+    """Bold heading above ``pos`` in the same column, e.g. "Zeitprogramm 1".
+
+    Short numbers on the heading row right of it (until the next heading) are
+    appended, because TA pages often write "Zeitprogramm" and "1" separately.
+    """
+    own = layout.positions.get(pos)
+    if own is None:
+        return None
+    best: tuple[tuple[float, float], str] | None = None
+    for other_pos, other in elements.items():
+        info = layout.positions.get(other_pos)
+        if (
+            info is None
+            or not info.bold
+            or other.is_change
+            or other.is_button
+            or other.is_link
+            or not _is_label_text(other.text)
+        ):
+            continue
+        above = own.top - info.top
+        if info.top <= (layout.height or 816) * 0.15:
+            continue  # page headline, not a section
+        if above <= 20 or above > 350 or info.x > own.x + 40:
+            continue
+        key = (above, own.x - info.x)
+        if best is None or key < best[0]:
+            best = (key, other_pos)
+    if best is None:
+        return None
+    head = layout.positions[best[1]]
+    row = []
+    for other_pos, other in elements.items():
+        info = layout.positions.get(other_pos)
+        if info is None or other.is_change or other.is_button or other.is_link:
+            continue
+        if not _same_row(head, info) or info.x < head.x:
+            continue
+        if other_pos == best[1] or _ROW_NUMBER.match(other.text):
+            row.append((info.x, other_pos, other.text))
+        elif _is_label_text(other.text):
+            row.append((info.x, other_pos, None))  # next heading -> stop
+    parts = []
+    for _, other_pos, text in sorted(row):
+        if text is None:
+            break
+        parts.append(text)
+    return " ".join(parts) or None
+
+
+def time_name(
+    pos: str,
+    elements: dict[str, SchemaElement],
+    layout: PageLayout,
+    time_positions: set[str],
+    label_pos: dict[str, str | None],
+    label: str | None,
+) -> str:
+    """Name a switching time, e.g. "Zeitprogramm 1 1. von"."""
+    section = find_section(label_pos.get(pos) or pos, elements, layout)
+    own = layout.positions.get(pos)
+    siblings = sorted(
+        (layout.positions[p].x, p)
+        for p in time_positions
+        if own is not None
+        and p in layout.positions
+        and label_pos.get(p) == label_pos.get(pos)
+        and abs(layout.positions[p].top - own.top) <= 20
+    )
+    suffix = None
+    if len(siblings) == 2:
+        suffix = "von" if siblings[0][1] == pos else "bis"
+    elif len(siblings) > 2:
+        suffix = str([p for _, p in siblings].index(pos) + 1)
+    return " ".join(part for part in (section, label, suffix) if part) or pos
+
+
 def find_headline(elements: dict[str, SchemaElement], layout: PageLayout) -> str | None:
-    """Return the bold, biggest texts at the top of the page (e.g. "Einstellungen FBH EG")."""
+    """Texts in the topmost row of the page (e.g. "Einstellungen FBH EG")."""
+    limit = (layout.height or 816) * 0.15
     candidates = []
     for pos, el in elements.items():
         info = layout.positions.get(pos)
-        if info is None or not info.bold or el.is_change or el.is_button:
+        if info is None or info.top > limit or el.is_change or el.is_button or el.is_link:
             continue
         if _is_label_text(el.text):
             candidates.append((info, el.text))
     if not candidates:
         return None
-    biggest = max(info.font_size for info, _ in candidates)
-    top_row = min(info.top for info, _ in candidates if info.font_size == biggest)
-    parts = [
-        (info.x, text)
-        for info, text in candidates
-        if info.font_size == biggest and abs(info.top - top_row) <= 15
-    ]
+    top_row = min(info.top for info, _ in candidates)
+    parts = [(info.x, text) for info, text in candidates if info.top - top_row <= 20]
     return " ".join(text for _, text in sorted(parts))
 
 

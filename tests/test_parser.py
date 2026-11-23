@@ -50,6 +50,33 @@ class ValuesTest(unittest.TestCase):
         self.assertTrue(values["pos21"].is_link)
 
 
+class NamingTest(unittest.TestCase):
+    def test_room_controller_headline(self):
+        values = p.parse_values(fixture("21.cgi"))
+        layout = p.parse_layout(fixture("21.html"))
+        self.assertEqual(p.find_headline(values, layout), "WZ-Küche")
+        self.assertEqual(p.find_label("pos4", values, layout), "T.Raum Normal")
+        self.assertEqual(p.find_label("pos3", values, layout), "T.Raum Absenk")
+
+    def test_time_program(self):
+        values = p.parse_values(fixture("5.cgi"))
+        layout = p.parse_layout(fixture("5.html"))
+        self.assertEqual(p.find_headline(values, layout), "Zeitprog. FBH EG")
+        label_pos = {pos: p.find_label_pos(pos, values, layout) for pos in values}
+        times = {"pos32", "pos33", "pos38", "pos39"}
+
+        def name(pos):
+            lp = label_pos[pos]
+            return p.time_name(pos, values, layout, times, label_pos, values[lp].text if lp else None)
+
+        self.assertEqual(name("pos32"), "Zeitprogramm 1 1. von")
+        self.assertEqual(name("pos33"), "Zeitprogramm 1 1. bis")
+        self.assertEqual(name("pos38"), "Zeitprogramm 2 1. von")
+        self.assertEqual(name("pos39"), "Zeitprogramm 2 1. bis")
+        # weekday buttons: row label is the program number
+        self.assertEqual(p.find_label("pos19", values, layout), "1")
+
+
 class ChangerTest(unittest.TestCase):
     def test_number(self):
         c = p.parse_changer(fixture("changer_number.html"))

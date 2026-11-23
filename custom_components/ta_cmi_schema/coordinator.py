@@ -29,8 +29,11 @@ from .parser import (
     KIND_TIME,
     PageLayout,
     SchemaElement,
+    ROW_NUMBER,
     find_headline,
     find_label,
+    find_label_pos,
+    time_name,
     parse_layout,
     parse_number,
     parse_values,
@@ -132,21 +135,36 @@ class CMISchemaCoordinator(DataUpdateCoordinator[dict[int, dict[str, SchemaEleme
                 used_names[name] = count
                 return name if count == 1 else f"{name} {count}"
 
+            changers: dict[str, Any] = {}
             for pos, el in values.items():
-                if el.is_change:
-                    if el.address in seen_addresses:
-                        continue  # same value shown on several pages
-                    seen_addresses.add(el.address)
+                if not el.is_change or el.address in seen_addresses:
+                    continue  # same value may be shown on several pages
+                seen_addresses.add(el.address)
+                try:
+                    changer = await self.client.get_changer(el.address)
+                except CMIError as err:
+                    _LOGGER.warning("Skipping %s on page %s: %s", el.address, page, err)
+                    continue
+                if changer.kind not in (KIND_NUMBER, KIND_SELECT, KIND_TIME):
+                    _LOGGER.debug("Unsupported value type %s on page %s", el.address, page)
+                    continue
+                changers[pos] = changer
+
+            label_pos = {pos: find_label_pos(pos, values, layout) for pos in values}
+            time_positions = {p for p, ch in changers.items() if ch.kind == KIND_TIME}
+
+            for pos, el in values.items():
+                if pos in changers:
+                    changer = changers[pos]
                     inline_label, _ = el.split_label()
-                    label = inline_label or find_label(pos, values, layout) or pos
-                    try:
-                        changer = await self.client.get_changer(el.address)
-                    except CMIError as err:
-                        _LOGGER.warning("Skipping %s on page %s: %s", el.address, page, err)
-                        continue
-                    if changer.kind not in (KIND_NUMBER, KIND_SELECT, KIND_TIME):
-                        _LOGGER.debug("Unsupported value type %s on page %s", el.address, page)
-                        continue
+                    row = values[label_pos[pos]].text if label_pos[pos] else None
+                    label = inline_label or row
+                    if changer.kind == KIND_TIME:
+                        name = time_name(
+                            pos, values, layout, time_positions, label_pos, label
+                        )
+                    else:
+                        name = label or pos
                     params.append(
                         {
                             "key": el.address,
@@ -154,7 +172,7 @@ class CMISchemaCoordinator(DataUpdateCoordinator[dict[int, dict[str, SchemaEleme
                             "page": page,
                             "pos": pos,
                             "address": el.address,
-                            "name": unique(label),
+                            "name": unique(name),
                             "unit": changer.unit,
                             "min": changer.minimum,
                             "max": changer.maximum,
@@ -163,8 +181,12 @@ class CMISchemaCoordinator(DataUpdateCoordinator[dict[int, dict[str, SchemaEleme
                         }
                     )
                 elif el.is_button:
-                    row = find_label(pos, values, layout)
+                    row = values[label_pos[pos]].text if label_pos[pos] else None
                     text = el.button_text or pos
+                    if row and ROW_NUMBER.match(row):
+                        name = f"{text} {row.rstrip('.')}"
+                    else:
+                        name = f"{row} {text}" if row else text
                     params.append(
                         {
                             "key": f"{page}_{pos}",
@@ -172,10 +194,10 @@ class CMISchemaCoordinator(DataUpdateCoordinator[dict[int, dict[str, SchemaEleme
                             "page": page,
                             "pos": pos,
                             "address": None,
-                            "name": unique(f"{row} {text}" if row else text),
+                            "name": unique(name),
                         }
                     )
-                elif with_sensors and not el.is_link:
+                elif with_sensors and not el.is_change and not el.is_link:
                     inline_label, value_text = el.split_label()
                     number = parse_number(value_text)
                     if number is None or number.unit is None:
