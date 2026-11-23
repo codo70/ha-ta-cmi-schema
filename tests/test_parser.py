@@ -77,6 +77,35 @@ class NamingTest(unittest.TestCase):
         self.assertEqual(p.find_label("pos19", values, layout), "1")
 
 
+class UnlabeledTimeRowsTest(unittest.TestCase):
+    """Page like "Zirkulation": rows "06:00 - 07:00" without row numbers."""
+
+    def setUp(self):
+        rows = [(300, "06:00", "07:00"), (350, "19:00", "20:00"), (400, "00:00", "00:00")]
+        cgi, css = [], ['<script>titel ="Zirkulation";</script><style>#values{width:1440px; height:816px;}']
+        cgi.append('<div id="pos1" >\nZirkulation\n</div>')
+        css.append("#pos1{position:absolute; top:10px; left:30px;}")
+        n = 10
+        for top, start, end in rows:
+            for x, text in ((100, start), (200, end)):
+                cgi.append(f'<div id="pos{n}" class="changex2" adresse="1174848{n:04d}">\n{text}</div>')
+                css.append(f"#pos{n}{{position:absolute; top:{top}px; left:{x}px;}}")
+                n += 1
+        self.values = p.parse_values("\n".join(cgi))
+        self.layout = p.parse_layout("\n".join(css) + "</style>")
+        self.times = {pos for pos in self.values if self.values[pos].is_change}
+        self.label_pos = {pos: p.find_label_pos(pos, self.values, self.layout) for pos in self.values}
+
+    def name(self, pos):
+        return p.time_name(pos, self.values, self.layout, self.times, self.label_pos, None)
+
+    def test_rows_are_numbered(self):
+        self.assertEqual(self.name("pos10"), "Zeitfenster 1 von")
+        self.assertEqual(self.name("pos11"), "Zeitfenster 1 bis")
+        self.assertEqual(self.name("pos12"), "Zeitfenster 2 von")
+        self.assertEqual(self.name("pos15"), "Zeitfenster 3 bis")
+
+
 class StartPageTest(unittest.TestCase):
     """Overview page with status pictures, controller clock and power in "KW"."""
 

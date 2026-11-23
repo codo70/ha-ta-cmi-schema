@@ -36,6 +36,7 @@ from .parser import (
     find_label,
     find_label_pos,
     find_lamp_label,
+    WEEKDAYS,
     time_name,
     parse_layout,
     parse_number,
@@ -207,6 +208,9 @@ class CMISchemaCoordinator(DataUpdateCoordinator[dict[int, dict[str, SchemaEleme
                         name = f"Zeitprogramm {row.rstrip('.')} {text}"
                     elif row and ROW_NUMBER.match(row):
                         name = f"{text} {row.rstrip('.')}"
+                    elif not row and time_positions and text in WEEKDAYS:
+                        # weekday buttons of a time program without row label
+                        name = f"Wochentag {text}"
                     else:
                         name = f"{row} {text}" if row else text
                     params.append(

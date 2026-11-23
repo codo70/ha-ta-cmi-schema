@@ -223,6 +223,7 @@ _WIDTH = re.compile(r"#values\s*\{[^}]*?width\s*:\s*(\d+)")
 _HEIGHT = re.compile(r"#values\s*\{[^}]*?height\s*:\s*(\d+)")
 _ROW_NUMBER = re.compile(r"^\d{1,2}\.?$")
 ROW_NUMBER = _ROW_NUMBER
+WEEKDAYS = {"Mo", "Di", "Mi", "Do", "Fr", "Sa", "So", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"}
 _RULE = re.compile(r"((?:#pos\d+[^{,]*,?\s*)+)\{([^}]*)\}")
 _PROP = re.compile(r"([a-z-]+)\s*:\s*([^;]+)")
 
@@ -474,6 +475,23 @@ def time_name(
     if label and _ROW_NUMBER.match(label):
         # rows "1.", "2.", "3." of a time program are its time windows
         label = f"Zeitfenster {label.rstrip('.')}"
+    elif not label and own is not None:
+        # unlabeled rows "06:00 - 07:00" below each other: number them
+        rows: list[float] = []
+        for p in time_positions:
+            info = layout.positions.get(p)
+            if (
+                info is None
+                or label_pos.get(p) is not None
+                or find_section(p, elements, layout) != section
+            ):
+                continue
+            if not any(abs(info.top - top) <= 20 for top in rows):
+                rows.append(info.top)
+        rows.sort()
+        if len(rows) > 1:
+            index = next(i for i, top in enumerate(rows) if abs(own.top - top) <= 20)
+            label = f"Zeitfenster {index + 1}"
     return " ".join(part for part in (section, label, suffix) if part) or f"Schaltzeit {pos[3:]}"
 
 
