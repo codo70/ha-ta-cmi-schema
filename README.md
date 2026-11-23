@@ -74,6 +74,7 @@ Die 11-stellige **Kurzadresse** ist stabil. Die 14-stellige **Schreibadresse** w
 - Alle Anfragen laufen nacheinander, um den kleinen Webserver des C.M.I. nicht zu überlasten.
 - Getestet mit C.M.I. (Webserver *Keil-EWEB/2.1*), UVR16x2 und RAS-Raumreglern.
 - Inoffizielles Projekt, nicht von Technische Alternative.
+- **Installation und Nutzung erfolgen auf eigenes Risiko.** Die Integration schreibt Werte direkt in die Heizungsregelung – Änderungen bitte prüfen. Es wird keine Haftung für Schäden oder Fehlfunktionen übernommen.
 
 ---
 
@@ -90,3 +91,5 @@ The integration uses the same requests as the C.M.I. schema web page. Each schem
 **Action:** `ta_cmi_schema.write_value` with `short_address` and `value`.
 
 Unofficial project, not affiliated with Technische Alternative. MIT license.
+
+**Install and use at your own risk.** The integration writes values directly to the heating controller – please double-check changes. No liability is accepted for any damage or malfunction.
