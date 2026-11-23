@@ -100,14 +100,16 @@ class UnlabeledTimeRowsTest(unittest.TestCase):
         return p.time_name(pos, self.values, self.layout, self.times, self.label_pos, None)
 
     def test_rows_are_numbered(self):
-        self.assertEqual(self.name("pos10"), "Zeitfenster 1 Beginn")
-        self.assertEqual(self.name("pos11"), "Zeitfenster 1 Ende")
-        self.assertEqual(self.name("pos12"), "Zeitfenster 2 Beginn")
-        self.assertEqual(self.name("pos15"), "Zeitfenster 3 Ende")
+        self.assertEqual(self.name("pos10"), "Zeitprogramm Zeitfenster 1 Beginn")
+        self.assertEqual(self.name("pos11"), "Zeitprogramm Zeitfenster 1 Ende")
+        self.assertEqual(self.name("pos12"), "Zeitprogramm Zeitfenster 2 Beginn")
+        self.assertEqual(self.name("pos15"), "Zeitprogramm Zeitfenster 3 Ende")
 
     def test_weekday_order(self):
         days = ["So", "Mo", "Fr", "Di"]
         self.assertEqual(sorted(days, key=p.WEEKDAYS.get), ["Mo", "Di", "Fr", "So"])
+        self.assertEqual(p.weekday_name("Mo"), "Wochentag 1 Montag")
+        self.assertEqual(p.weekday_name("So"), "Wochentag 7 Sonntag")
 
 
 class StartPageTest(unittest.TestCase):

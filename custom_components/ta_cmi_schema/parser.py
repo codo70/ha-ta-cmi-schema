@@ -224,12 +224,21 @@ _HEIGHT = re.compile(r"#values\s*\{[^}]*?height\s*:\s*(\d+)")
 _ROW_NUMBER = re.compile(r"^\d{1,2}\.?$")
 ROW_NUMBER = _ROW_NUMBER
 # weekday button text -> position in the week (names are sorted alphabetically in HA)
+_DAY_NAMES = ("Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag")
 WEEKDAYS = {
     day: i % 7 + 1
     for i, day in enumerate(
         ("Mo", "Di", "Mi", "Do", "Fr", "Sa", "So", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
     )
 }
+
+
+def weekday_name(day: str) -> str:
+    """ "Mo" -> "Wochentag 1 Montag" (HA sorts names, so Monday comes first)."""
+    if day not in WEEKDAYS:
+        return day
+    number = WEEKDAYS[day]
+    return f"Wochentag {number} {_DAY_NAMES[number - 1]}"
 _RULE = re.compile(r"((?:#pos\d+[^{,]*,?\s*)+)\{([^}]*)\}")
 _PROP = re.compile(r"([a-z-]+)\s*:\s*([^;]+)")
 
@@ -499,6 +508,8 @@ def time_name(
         if len(rows) > 1:
             index = next(i for i, top in enumerate(rows) if abs(own.top - top) <= 20)
             label = f"Zeitfenster {index + 1}"
+            # keep the windows together with "Zeitprogramm Wochentag …"
+            section = section or "Zeitprogramm"
     return " ".join(part for part in (section, label, suffix) if part) or f"Schaltzeit {pos[3:]}"
 
 
