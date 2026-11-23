@@ -18,6 +18,7 @@ from .const import (
     CONF_SCAN_INTERVAL,
     CONF_SENSORS,
     DEFAULT_SCAN_INTERVAL,
+    DISCOVERY_VERSION,
     DOMAIN,
     MAX_MISSING_PAGES,
     MAX_PAGES,
@@ -92,6 +93,11 @@ class CMISchemaCoordinator(DataUpdateCoordinator[dict[int, dict[str, SchemaEleme
             return
         self.discovery = await self._async_discover()
         await self._store.async_save(self.discovery)
+
+    @property
+    def discovery_outdated(self) -> bool:
+        """Cached schema was read by an older version of this integration."""
+        return self.discovery.get("version") != DISCOVERY_VERSION
 
     async def _async_discover(self) -> dict[str, Any]:
         wanted = parse_pages_option(self.config_entry.options.get(CONF_PAGES))
@@ -219,7 +225,7 @@ class CMISchemaCoordinator(DataUpdateCoordinator[dict[int, dict[str, SchemaEleme
         _LOGGER.info(
             "C.M.I. discovery: %s pages, %s entities", len(pages), len(params)
         )
-        return {"pages": pages, "params": params}
+        return {"version": DISCOVERY_VERSION, "pages": pages, "params": params}
 
     # ------------------------------------------------------------------ polling
 

@@ -62,23 +62,27 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         await coordinator.async_request_refresh()
 
     async def rediscover(call: ServiceCall) -> None:
-        coordinator = _coordinator(call)
-        entry = coordinator.config_entry
-
-        async def _run() -> None:
-            try:
-                await coordinator.async_load_discovery(force=True)
-            except CMIError as err:
-                _LOGGER.error("Re-reading the C.M.I. schema failed: %s", err)
-                return
-            hass.config_entries.async_schedule_reload(entry.entry_id)
-
-        # crawling all pages takes a while - do not block the caller
-        entry.async_create_background_task(hass, _run(), f"{DOMAIN}_rediscover")
+        _schedule_rediscover(hass, _coordinator(call))
 
     hass.services.async_register(DOMAIN, SERVICE_WRITE_VALUE, write_value, schema=WRITE_SCHEMA)
     hass.services.async_register(DOMAIN, SERVICE_REDISCOVER, rediscover, schema=REDISCOVER_SCHEMA)
     return True
+
+
+def _schedule_rediscover(hass: HomeAssistant, coordinator: CMISchemaCoordinator) -> None:
+    """Crawl the schema again in the background, then reload the entry."""
+    entry = coordinator.config_entry
+
+    async def _run() -> None:
+        try:
+            await coordinator.async_load_discovery(force=True)
+        except CMIError as err:
+            _LOGGER.error("Re-reading the C.M.I. schema failed: %s", err)
+            return
+        hass.config_entries.async_schedule_reload(entry.entry_id)
+
+    # crawling all pages takes a while - do not block the caller / the start
+    entry.async_create_background_task(hass, _run(), f"{DOMAIN}_rediscover")
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -112,6 +116,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         hass, coordinator.async_refresh(), f"{DOMAIN}_first_refresh"
     )
     entry.async_on_unload(entry.add_update_listener(_async_options_updated))
+    if coordinator.discovery_outdated:
+        # schema cached by an older version: names/types may have improved since
+        _LOGGER.info("Cached C.M.I. schema is from an older version, re-reading it")
+        _schedule_rediscover(hass, coordinator)
     return True
 
 

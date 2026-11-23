@@ -13,6 +13,9 @@ MAX_PAGES = 200
 MAX_MISSING_PAGES = 3
 
 STORAGE_VERSION = 1
+# bump whenever discovery (names, detected types) changes, so cached schemas
+# of older versions are re-read automatically after an update
+DISCOVERY_VERSION = 2
 
 PLATFORMS = ["number", "select", "time", "switch", "sensor", "button"]
 
